@@ -44,7 +44,47 @@ You: exit
 
 The `fm serve` endpoint exposes two models:
 
-- `system` — on-device Apple Foundation Model (default)
-- `pcc` — Private Cloud Compute
+- `system` — on-device Apple Foundation Model (~4K token context)
+- `pcc` — Private Cloud Compute (larger context, recommended)
 
 Change the model by editing `MODEL` in `agent.py`.
+
+## Using with Hermes Agent
+
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) can be wired to `fm serve` as a drop-in OpenAI-compatible backend.
+
+**`~/.hermes/config.yaml`**
+
+```yaml
+model:
+  api_key: fm
+  base_url: http://127.0.0.1:1976/v1
+  default: pcc
+  provider: fm
+
+providers:
+  fm:
+    api: http://127.0.0.1:1976/v1
+    default_model: pcc
+    models:
+      - system
+      - pcc
+    name: Apple Foundation Models
+
+streaming:
+  enabled: true
+
+# Disable built-in toolsets — Apple models reject many Hermes tool schemas
+platform_toolsets:
+  cli: []
+toolsets: []
+```
+
+Then run:
+
+```bash
+hermes --oneshot "What is 12 * 34?"
+# → 12 * 34 = 408
+```
+
+> **Note:** The `system` model has a ~4K token context window — too small for Hermes's system prompt. Use `pcc` instead.
